@@ -5,7 +5,7 @@ class OrganizePDFs:
     """
     Organizes archived engineering job PDFs in folders by their job number.
     """
-    def __init__(self, directory, beginning_file, job_list):
+    def __init__(self, directory, beginning_file, job_list_txt):
         """
         Initializes Organize PDFs class
         :param directory: The base directory in which unorganized PDFs are
@@ -17,7 +17,49 @@ class OrganizePDFs:
         """
         self.directory = directory
         self.beginning_PDF_index = beginning_file[4:-4]
-        self.job_list = job_list
+        self.job_list_txt_file = job_list_txt
+        self.job_list = self.read_job_list()
+
+    def read_job_list(self):
+        """
+        Reads lines of form "1234 5" from a txt file as tuples, places in list.
+        :return: list of tuples(str, int)
+        """
+        try:
+            txt_file = open(self.job_list_txt_file, 'r')
+        except FileNotFoundError:
+            raise FileNotFoundError
+        except IOError:
+            raise IOError
+        except:
+            raise Exception
+
+        tuple_list = []
+        for pair in txt_file:  # line in form " 1234 5"
+            line_list = pair.split(' ')  # split the line at the space
+            pplist.append((line_list[0], int(line_list[1])))
+        return tuple_list
+
+    def is_correct_file_count(self):
+        """
+        Ensures the user entered number of PDFs matches the directory contents.
+        :return: boolean: True for correct PDF count, False otherwise.
+        """
+        job_list_count = 0
+        directory_count = len([file for file in os.listdir(self.directory)
+                               if file.endswith(".pdf")])
+
+        for job_num, PDF_count in self.job_list:
+            job_list_count = job_list_count + PDF_count
+
+        if job_list_count == directory_count:
+            return True
+        else:
+            print("WARNING: Incorrect number of PDF files supplied in "
+                  "relation to directory contents, verify results. Directory "
+                  "contains: ", directory_count, " User supplied: ",
+                  job_list_count)
+            return False
 
     def move_pdf_to_folder(self, job_number):
         """
@@ -26,7 +68,6 @@ class OrganizePDFs:
         :return: None
         """
         file_name = "scan"+str(self.beginning_PDF_index) + ".pdf"
-        print(file_name)
         try:
             os.renames(
                 self.directory+file_name,
@@ -59,15 +100,15 @@ class OrganizePDFs:
         Iterates through job_list creating folders for each job and moves PDFs.
         :return: None
         """
+        if not self.is_correct_file_count():  # warn if count is off
+            input("Press any key to continue...")
+
         for job, PDFs in self.job_list:
             try:
                 sub_directory = self.directory+"#"+str(job)+"/"
 
-                # if directory has not been created already
                 if not os.path.isdir(sub_directory):
                     os.makedirs(sub_directory)
-                else:
-                    print("Dir already exists")
 
             except OSError as error:
                 print("error:\t"+error.__str__())
@@ -75,27 +116,25 @@ class OrganizePDFs:
             except Exception as error:
                 print("error:\t"+error.__str__())
                 return 2
+
             for x in range(0, PDFs):  # for every PDF per job file
                 if self.path_is_valid(self.beginning_PDF_index):
-                    print(job, str(PDFs))
                     self.move_pdf_to_folder(job_number=str(job))
                 else:
-                    while not self.path_is_valid(self.beginning_PDF_index):
+                    its = 0 # iteration counter for pdf name increments
+                    while not self.path_is_valid(self.beginning_PDF_index) \
+                            and its < 100:
                         self.increment(self.beginning_PDF_index)
-                        self.move_pdf_to_folder(job_number=str(job))
+                        its += 1
+                    self.move_pdf_to_folder(job_number=str(job))
 
                 self.increment(self.beginning_PDF_index)
 
 # example usage #
-cur_job_list = [
-    ("06-66", 1), ("06-64", 1), ("06-63", 1), ("06-54", 1), ("06-50", 1),
-    ("06-46", 1), ("06-45", 1), ("06-39", 1), ("06-27", 1), ("06-23", 1),
-    ("06-22", 1), ("06-19", 1), ("06-12", 1), ("06-10", 1), ("06-09", 1),
-    ("06-06", 1), ("06-01", 1), ("06-05", 1), ("06-48", 1), ("06-47", 1)
-]
-my_dir = "/Users/brooke/Desktop/Small Jobs/"
-beginning_PDF_file = "scan00650.pdf"
+my_dir = "/Users/brooke/Desktop/#6701-6750/"
+beginning_PDF_file = "scan00070.pdf"
+file = "/Users/brooke/Desktop/ex.txt"
 
 ex = OrganizePDFs(directory=my_dir, beginning_file=beginning_PDF_file,
-                  job_list=cur_job_list)
+                  job_list_txt=file)
 ex.organize()

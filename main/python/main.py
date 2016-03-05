@@ -1,4 +1,5 @@
 import os
+from command_opts import Options
 
 
 class OrganizePDFs:
@@ -19,6 +20,7 @@ class OrganizePDFs:
         self.beginning_PDF_index = beginning_file[4:-4]
         self.job_list_txt_file = job_list_txt
         self.job_list = self.read_job_list()
+        print("ERRORS HERE:",self.beginning_PDF_index, beginning_file)
 
     def read_job_list(self):
         """
@@ -29,6 +31,8 @@ class OrganizePDFs:
             txt_file = open(self.job_list_txt_file, 'r')
         except FileNotFoundError:
             raise FileNotFoundError
+        except TypeError:
+            raise TypeError
         except IOError:
             raise IOError
         except:
@@ -37,7 +41,7 @@ class OrganizePDFs:
         tuple_list = []
         for pair in txt_file:  # line in form " 1234 5"
             line_list = pair.split(' ')  # split the line at the space
-            pplist.append((line_list[0], int(line_list[1])))
+            tuple_list.append((line_list[0], int(line_list[1])))
         return tuple_list
 
     def is_correct_file_count(self):
@@ -69,6 +73,7 @@ class OrganizePDFs:
         """
         file_name = "scan"+str(self.beginning_PDF_index) + ".pdf"
         try:
+            print(file_name)
             os.renames(
                 self.directory+file_name,
                 self.directory+"#"+str(job_number)+"/"+file_name)
@@ -106,7 +111,7 @@ class OrganizePDFs:
         for job, PDFs in self.job_list:
             try:
                 sub_directory = self.directory+"#"+str(job)+"/"
-
+                print(sub_directory,job, PDFs)
                 if not os.path.isdir(sub_directory):
                     os.makedirs(sub_directory)
 
@@ -131,10 +136,27 @@ class OrganizePDFs:
                 self.increment(self.beginning_PDF_index)
 
 # example usage #
-my_dir = "/Users/brooke/Desktop/#6701-6750/"
-beginning_PDF_file = "scan00070.pdf"
-file = "/Users/brooke/Desktop/ex.txt"
 
-ex = OrganizePDFs(directory=my_dir, beginning_file=beginning_PDF_file,
-                  job_list_txt=file)
+# not using command line for OrganizePDFs params
+
+#my_dir = "/Users/brooke/Desktop/#6651-6700/"
+#beginning_PDF_file = "scan00179.pdf"
+#file = "/Users/brooke/Desktop/ex.txt"
+
+#ex = OrganizePDFs(directory=my_dir, beginning_file=beginning_PDF_file,
+#                  job_list_txt=file)
+
+
+# using command line for OrganizePDFs params
+command_input = Options()
+print(command_input.__str__())
+
+print('.'.join(command_input.options[2]),"\n",
+                  '.'.join(command_input.options[0]), "\n",
+                  '.'.join(command_input.options[1]))
+
+ex = OrganizePDFs(directory='.'.join(command_input.options[2]),
+                  beginning_file='.'.join(command_input.options[0]),
+                 job_list_txt='.'.join(command_input.options[1]))
+
 ex.organize()

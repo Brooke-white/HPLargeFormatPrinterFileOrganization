@@ -1,3 +1,4 @@
+# coding=utf-8
 import os
 from command_opts import Options
 
@@ -16,11 +17,11 @@ class OrganizePDFs:
         :param job_list: A List of tuples of form
         [("Job Number", int(Number of PDFs)]
         """
-        self.directory = directory
+        self.directory = directory + '/' if not str(directory).endswith('/') \
+            else directory
         self.beginning_PDF_index = beginning_file[4:-4]
         self.job_list_txt_file = job_list_txt
         self.job_list = self.read_job_list()
-        print("ERRORS HERE:",self.beginning_PDF_index, beginning_file)
 
     def read_job_list(self):
         """
@@ -39,9 +40,15 @@ class OrganizePDFs:
             raise Exception
 
         tuple_list = []
-        for pair in txt_file:  # line in form " 1234 5"
-            line_list = pair.split(' ')  # split the line at the space
-            tuple_list.append((line_list[0], int(line_list[1])))
+        count = 0
+        for pair in txt_file:  # line in form "1234 5"
+            line_list = pair.split('\n')
+            line_list = line_list[0].split(' ')
+            try:
+                tuple_list.append((line_list[0], int(line_list[1])))
+            except IndexError:
+                continue  # move along if line is blank
+            count += 1
         return tuple_list
 
     def is_correct_file_count(self):
@@ -73,7 +80,6 @@ class OrganizePDFs:
         """
         file_name = "scan"+str(self.beginning_PDF_index) + ".pdf"
         try:
-            print(file_name)
             os.renames(
                 self.directory+file_name,
                 self.directory+"#"+str(job_number)+"/"+file_name)
@@ -111,7 +117,6 @@ class OrganizePDFs:
         for job, PDFs in self.job_list:
             try:
                 sub_directory = self.directory+"#"+str(job)+"/"
-                print(sub_directory,job, PDFs)
                 if not os.path.isdir(sub_directory):
                     os.makedirs(sub_directory)
 
@@ -134,14 +139,15 @@ class OrganizePDFs:
                     self.move_pdf_to_folder(job_number=str(job))
 
                 self.increment(self.beginning_PDF_index)
+        print("Operation complete")
 
 # example usage #
 
 # not using command line for OrganizePDFs params
 
-#my_dir = "/Users/brooke/Desktop/#6651-6700/"
-#beginning_PDF_file = "scan00179.pdf"
-#file = "/Users/brooke/Desktop/ex.txt"
+#my_dir = "/Users/brooke/Desktop/#6501-6600/"
+#beginning_PDF_file = "scan00680.pdf"
+#file = "/Users/brooke/Desktop/input.txt"
 
 #ex = OrganizePDFs(directory=my_dir, beginning_file=beginning_PDF_file,
 #                  job_list_txt=file)
@@ -149,14 +155,9 @@ class OrganizePDFs:
 
 # using command line for OrganizePDFs params
 command_input = Options()
-print(command_input.__str__())
 
-print('.'.join(command_input.options[2]),"\n",
-                  '.'.join(command_input.options[0]), "\n",
-                  '.'.join(command_input.options[1]))
-
-ex = OrganizePDFs(directory='.'.join(command_input.options[2]),
+ex = OrganizePDFs(directory=''.join(command_input.options[2]),
                   beginning_file='.'.join(command_input.options[0]),
-                 job_list_txt='.'.join(command_input.options[1]))
+                  job_list_txt='.'.join(command_input.options[1]))
 
 ex.organize()

@@ -135,8 +135,5 @@ class Options:
 def main():
     current = Options
 
-
 if __name__ == "__main__":
     main()
-
-
